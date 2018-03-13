@@ -20,8 +20,8 @@ from urllib.request import urlopen
 from crawling.tool import preprocessing
 
 # 날짜, 기준날짜, 페이지, 저장할 데이터프레임
-dates = range(15)
-base_time = datetime.datetime(2018, 3, 3)
+dates = range(1)
+base_time = datetime.datetime(2018, 3, 9)
 pages = range(50)
 result = pd.DataFrame({"title": [], "date": [], "body": [], "sum_content": [], "company": []})
 
@@ -67,13 +67,14 @@ for date in dates:
 
             # 기사 제목 크롤링
             title = article.find(id='articleTitle').get_text()
+            print(title)
             # 기사 신문사 크롤링
             company = article.find("div", {'class', 'press_logo'}).find('img').get('title')
             # 기사 본문 크롤링
             body = preprocessing(article.find(id='articleBodyContents'), company)
 
             d = {"title": [title], "date": [present_time], "body": [body], "sum_content": [sum_content], "company": [company]}
-           result = result.append(pd.DataFrame(data=d))
+            result = result.append(pd.DataFrame(data=d))
         print("페이지 :", (page + 1))
 
-result.to_csv("C:/Users/mo/Desktop/crawled_book.csv")
+result.to_csv("C:/Users/user/Desktop/crawled_book.csv")
