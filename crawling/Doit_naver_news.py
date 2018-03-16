@@ -52,18 +52,18 @@ for date in dates:
             try:
                 summary = BeautifulSoup(urlopen(sum_link), "html.parser")
             except (HTTPError, ConnectionResetError):
-                break
+                continue
             sum_content = summary.get_text()
             sum_content = sum_content.split("summary\":\"")[1].replace("\"});", "").replace(".",". ")
 
             # 요약정보가 없으면 break
             if '해당 기사는 요청하신 자동 요약문을 제공할 수 없습니다.' in sum_content:
-                break
+                continue
 
             try:
                 article = BeautifulSoup(urlopen(crawling_page), "html.parser")
             except (AttributeError, IndexError, ConnectionResetError):
-                break
+                continue
 
             # 기사 제목 크롤링
             title = article.find(id='articleTitle').get_text()
@@ -71,7 +71,10 @@ for date in dates:
             # 기사 신문사 크롤링
             company = article.find("div", {'class', 'press_logo'}).find('img').get('title')
             # 기사 본문 크롤링
-            body = preprocessing(article.find(id='articleBodyContents'), company)
+            object = article.find(id='articleBodyContents')
+            if type(object.find("table")) != type(None):
+                continue
+            body = preprocessing(object, company)
 
             d = {"title": [title], "date": [present_time], "body": [body], "sum_content": [sum_content], "company": [company]}
             result = result.append(pd.DataFrame(data=d))
