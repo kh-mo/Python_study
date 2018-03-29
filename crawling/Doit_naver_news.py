@@ -16,17 +16,18 @@ import datetime
 import pandas as pd
 from bs4 import BeautifulSoup
 from urllib.error import HTTPError
+from urllib.error import URLError
 from urllib.request import urlopen
 from crawling.tool import preprocessing
 
 # 날짜, 기준날짜, 페이지, 저장할 데이터프레임
-dates = range(1)
-base_time = datetime.datetime(2018, 3, 9)
+dates = range(200)
+base_time = datetime.datetime(2017, 8, 30)
 pages = range(50)
-result = pd.DataFrame({"title": [], "date": [], "body": [], "sum_content": [], "company": []})
 
 # 크롤링할 날짜
 for date in dates:
+    result = pd.DataFrame({"title": [], "date": [], "body": [], "sum_content": [], "company": []})
     dif_time = datetime.timedelta(days=date)
     present_time = (base_time - dif_time).strftime("%Y%m%d")
     print("날짜 :", present_time)
@@ -51,10 +52,14 @@ for date in dates:
             sum_link = "http://tts.news.naver.com/article/" + oid + "/" + aid + "/summary?callback=window.__jindo2_callback._2123"
             try:
                 summary = BeautifulSoup(urlopen(sum_link), "html.parser")
-            except (HTTPError, ConnectionResetError):
+            except (HTTPError, ConnectionResetError, URLError):
                 continue
             sum_content = summary.get_text()
-            sum_content = sum_content.split("summary\":\"")[1].replace("\"});", "").replace(".",". ")
+
+            try:
+                sum_content = sum_content.split("summary\":\"")[1].replace("\"});", "").replace(".",". ")
+            except (IndexError):
+                continue
 
             # 요약정보가 없으면 break
             if '해당 기사는 요청하신 자동 요약문을 제공할 수 없습니다.' in sum_content:
@@ -66,7 +71,10 @@ for date in dates:
                 continue
 
             # 기사 제목 크롤링
-            title = article.find(id='articleTitle').get_text()
+            try:
+                title = article.find(id='articleTitle').get_text()
+            except (AttributeError):
+                continue
             print(title)
             # 기사 신문사 크롤링
             company = article.find("div", {'class', 'press_logo'}).find('img').get('title')
@@ -74,10 +82,13 @@ for date in dates:
             object = article.find(id='articleBodyContents')
             if type(object.find("table")) != type(None):
                 continue
-            body = preprocessing(object, company)
+            try:
+                body = preprocessing(object, company)
+            except (IndexError, AttributeError):
+                continue
 
             d = {"title": [title], "date": [present_time], "body": [body], "sum_content": [sum_content], "company": [company]}
             result = result.append(pd.DataFrame(data=d))
         print("페이지 :", (page + 1))
+    result.to_csv("C:/Users/user/Desktop/crawling/crawled_book_" + present_time + ".csv")
 
-result.to_csv("C:/Users/user/Desktop/crawled_book.csv")
