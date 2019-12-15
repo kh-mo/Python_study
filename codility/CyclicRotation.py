@@ -28,3 +28,10 @@ def solution(A, K):
     else:
         K %= arr_len
         return A[-K:] + A[:(arr_len-K)]
+
+'''
+오답노트
+1. 배열이 null 배열인 경우
+2. 0으로 나누는 경우
+3. lotation을 하는 의미가 없는 경우 = k가 1인 경우
+'''
