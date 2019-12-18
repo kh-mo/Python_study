@@ -12,13 +12,15 @@ def solution(A):
     fir_sum = sum(fir_part)
     sec_sum = sum(sec_part)
     diff = fir_sum - sec_sum
+    idx = 0
     while True:
         abs_diff = abs(diff)
         if abs_diff < minimum_value:
             minimum_value = abs_diff
-        if len(sec_part) == 1:
+        if len(sec_part)-1 == idx:
             break
-        diff += 2 * sec_part.pop(0)
+        diff += 2 * sec_part[idx]
+        idx += 1
     return minimum_value
 
 def solution(A):
@@ -54,6 +56,9 @@ def solution(A):
 1.1.660 sTIMEOUT ERROR, running time: 1.660 sec., time limit: 0.736 sec.
 2.1.652 sTIMEOUT ERROR, running time: 1.652 sec., time limit: 0.784 sec.
 3.1.096 sTIMEOUT ERROR, running time: 1.096 sec., time limit: 0.608 sec.
+
+pop 함수는 배열을 재 할당하기 때문에 상당히 부담이 되는 함수다.
+가급적 사용을 지양하는 편이 좋겠다.
 '''
 A = [3,1,2,4,3]
 A = [i for i in range(100000)]
