@@ -15,8 +15,8 @@ A[0] = 9  A[1] = 3  A[2] = 9 A[3] = 3  A[4] = 9  A[5] = 7 A[6] = 9
 A 배열 중 한 요소를 제외한 다른 숫자는 짝수번 발생한다 => 한 숫자는 홀수번 반복한다는 의미다(line 29가 문제였다)
 '''
 
+# solution 1
 from collections import Counter
-
 def solution(A):
     if len(A) == 1:
         return A[0]
@@ -28,3 +28,19 @@ def solution(A):
     for key, value in dic.items():
         if value%2 == 1:
             return key
+
+# solution 2
+def solution(A):
+    # ele_dict 초기화
+    ele_dict = {}
+    for ele in set(A):
+        ele_dict[str(ele)] = 0
+
+    # A에 들어있는 요소 개수 세기
+    for ele in A:
+        ele_dict[str(ele)] += 1
+
+    # 짝수개가 아닌 key를 찾아 반환
+    for key in ele_dict.keys():
+        if ele_dict[key] % 2 != 0:
+            return int(key)

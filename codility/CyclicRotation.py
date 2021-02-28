@@ -12,6 +12,7 @@ A = [0, 0, 0], K = 1, return [0, 0, 0]
 A = [1, 2, 3, 4], K = 4, return [1, 2, 3, 4]
 '''
 
+# solution 1
 def solution(A, K):
     # 배열의 길이를 센다
     arr_len = len(A)
@@ -29,9 +30,29 @@ def solution(A, K):
         K %= arr_len
         return A[-K:] + A[:(arr_len-K)]
 
+# solution 2
+def solution(A, K):
+    # 배열의 길이를 센다
+    arr_length = len(A)
+    if arr_length == 0 or K == 0:
+        return A
+
+    # K가 배열 길이보다 크면 나눠서 의미없는 회전수를 줄인다
+    if K > arr_length:
+        K = K % arr_length
+
+    # 배열의 길이와 동일하면 A를 그대로 반환하고 잘라야 할 경우 앞 배열, 뒤 배열을 쪼개 합친다
+    if arr_length == K:
+        return A
+    else:
+        front_arr = A[:-K]
+        back_arr = A[-K:]
+        new_arr = back_arr + front_arr
+        return new_arr
+
 '''
 오답노트
 1. 배열이 null 배열인 경우
-2. 0으로 나누는 경우
-3. lotation을 하는 의미가 없는 경우 = k가 1인 경우
-'''
+2. K가 0인 경우
+3. lotation을 하는 의미가 없는 경우(k가 배열의 길이과 같은 경우, 배열의 길이가 1인 경우) 
+''
