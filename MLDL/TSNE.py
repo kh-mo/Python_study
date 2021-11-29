@@ -1,28 +1,14 @@
-# class TSNE:
-#     def __init__(self,
-#                  perp=40,
-#                  iter=100,
-#                  lr=0.01,
-#                  momentum=0.1,
-#                  low_dim=2):
-#
-#     def fit(self, x):
-#         # data에서 euclidean distance matrix를 구한다
-#         distances = pairwise_distance(x) # pairwise_distances(x, metric=self.metric, squared=True)
-#         P = _joint_probabilities(distances, self.perplexity, self.verbose)
-#
-#         # binary search, shannon entropy에 따라 1~n의 sigma를 구한 후 P matrix를 반환한다
-#
-#         # gradient descent 로 y를 구한다
-
 import numpy as np
 
-def pairwise_euclidean_distance_matrix(x):
+
+def pairwise_euclidean_distance_matrix(x, square_distance=False):
     """make euclidean distance matrix.
 
     Parameters
     ----------
     x : ndarray of shape (n_samples, n_features)
+
+    square_distance : choose using square euclidean distance (default : False)
 
     Returns
     -------
@@ -35,9 +21,12 @@ def pairwise_euclidean_distance_matrix(x):
     matrix = np.zeros((x.shape[0], x.shape[0]))
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
-            if i != j:
+            if square_distance:
+                matrix[i][j] = sum((x[i] - x[j]) ** 2)
+            else:
                 matrix[i][j] = np.sqrt(sum((x[i] - x[j]) ** 2))
     return matrix
+
 
 def binary_search_using_perplexity(distances, perplexity=30):
     """use binary search & perplexity to make conditonal probability.
@@ -60,6 +49,7 @@ def binary_search_using_perplexity(distances, perplexity=30):
     n_features = distances.shape[1]
     binary_search_steps = 30
     perplexity_threshold = 1e-5
+    epsilon = 1e-8
 
     conditional_p = np.zeros_like(distances)
     for i in range(n_samples):
@@ -68,16 +58,26 @@ def binary_search_using_perplexity(distances, perplexity=30):
         sigma_i = 1
         # binary search
         for step in range(binary_search_steps):
+            # print("i : {}, step : {}".format(i, step))
             sum_pi = 0
             for j in range(n_features):
-                if i != j:
+                if i == j:
+                    conditional_p[i, j] = 0
+                else:
                     conditional_p[i, j] = np.exp(-distances[i, j] / sigma_i)
                     sum_pi += conditional_p[i, j]
+
+            # defensive programming
+            if sum_pi == 0:
+                sum_pi = epsilon
 
             H = 0
             for j in range(n_features):
                 if i != j:
                     conditional_p[i, j] /= sum_pi
+                    # defensive programming
+                    if conditional_p[i, j] == 0:
+                        continue
                     H += conditional_p[i, j] * np.log2(conditional_p[i, j])
 
             current_entropy = 2 ** (-H)
@@ -103,35 +103,93 @@ def binary_search_using_perplexity(distances, perplexity=30):
 
     return conditional_p
 
-def joint_probabilities(x, perplexity=30):
+
+def joint_probabilities(x, perplexity=30, square_distance=False):
     """make joint probability.
 
-        Parameters
-        ----------
-        x : ndarray of shape (n_samples, n_features)
-        perplexity : int = 30
+    Parameters
+    ----------
+    x : ndarray of shape (n_samples, n_features)
 
-        Returns
-        -------
-        p : ndarray of shape (n_samples, n_samples)
+    perplexity : int = 30
 
-        Examples::
-            perplexity = 3
-            x = np.random.randn(n_samples, dim)
-            p = joint_probabilities(x, perplexity)
-        """
-    distances = pairwise_euclidean_distance_matrix(x)
+    square_distance : choose using square euclidean distance (default : False)
+
+    Returns
+    -------
+    p : ndarray of shape (n_samples, n_samples)
+
+    Examples::
+        perplexity = 3
+        x = np.random.randn(n_samples, dim)
+        p = joint_probabilities(x, perplexity)
+    """
+    distances = pairwise_euclidean_distance_matrix(x, square_distance)
     conditional_p = binary_search_using_perplexity(distances, perplexity)
     p = (conditional_p + conditional_p.T) / (2 * n_samples)
     return p
 
-if __name__=="__main__":
+
+def get_manifold_elements(y, square_distance=True):
+    y_distances = pairwise_euclidean_distance_matrix(y, square_distance=square_distance)
+    y_distances = (y_distances + 1) ** (-1)
+    np.fill_diagonal(y_distances, 0)
+    q = y_distances / np.sum(y_distances)
+    return y_distances, q
+
+
+def get_gradient(n_samples, manifold_dim, p, q, y, y_distances):
+    grad = np.ndarray((n_samples, manifold_dim))
+    p_q_d = (p - q) * y_distances  # p * q * y_distance
+    for i in range(n_samples):
+        grad[i] = np.dot(p_q_d[i], (y[i] - y))
+    return grad
+
+
+if __name__ == "__main__":
     perplexity = 3
-    n_samples = 70000
-    dim = 784
-    x = np.random.randn(n_samples, dim) # x = np.random.uniform(0, 1, n_samples*dim).reshape(n_samples, dim)
-    p = joint_probabilities(x, perplexity)
+    n_samples = 100
+    original_dim = 784
+    manifold_dim = 2
+    epsilon = 1e-8
+    n_iters = 100
 
+    x = np.random.randn(
+        n_samples,
+        original_dim,
+    )  # x = np.random.uniform(0, 1, n_samples*original_dim).reshape(n_samples, original_dim)
+    p = joint_probabilities(x, perplexity, square_distance=True)
+    y = 1e-4 * np.random.randn(
+        n_samples,
+        manifold_dim,
+    )  # y = 1e-4 * np.random.uniform(0, 1, n_samples * manifold_dim).reshape(n_samples, manifold_dim)
 
-    from sklearn.manifold import TSNE
+    for i in range(n_iters):
+        y_distances, q = get_manifold_elements(y, square_distance=True)
+        grad = get_gradient(n_samples, manifold_dim, p, q, y, y_distances)
+        y += grad
 
+    # symmetrized conditional porbabilities ensures below
+    # (np.sum(p, axis=1) > (1/(2*n_samples))).all()
+
+    # import matplotlib.pyplot as plt
+    # plt.scatter(y[:,0],y[:,1],c="blue")
+    # plt.xlim(1e-3,-1e-3)
+    # plt.ylim(1e-3, -1e-3)
+
+    # class TSNE:
+    #     def __init__(self,
+    #                  perp=40,
+    #                  iter=100,
+    #                  lr=0.01,
+    #                  momentum=0.1,
+    #                  low_dim=2):
+    #
+    #     def fit(self, x):
+    #         # data에서 euclidean distance matrix를 구한다
+    #         distances = pairwise_distance(x) # pairwise_distances(x, metric=self.metric, squared=True)
+    #         P = _joint_probabilities(distances, self.perplexity, self.verbose)
+    #
+    #         # binary search, shannon entropy에 따라 1~n의 sigma를 구한 후 P matrix를 반환한다
+    #
+    #         # gradient descent 로 y를 구한다
