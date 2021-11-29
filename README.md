@@ -1,8 +1,18 @@
 # algorithm
 
 ### reference site
-[codility](https://app.codility.com/programmers/)
-
+- 해외
+    - [codility](https://app.codility.com/programmers/)
+    - [codeforces](https://codeforces.com/)
+- 국내
+    - [백준](https://www.acmicpc.net/)
+    - [코드업](https://codeup.kr/)
+    - [프로그래머스](https://programmers.co.kr/)
+    - [SW Expert Academy](https://swexpertacademy.com/main/main.do)
+- 온라인 IDE
+    - [리플릿](https://replit.com/)
+    - [파이썬 튜터](https://pythontutor.com/)
+    - [온라인 GBD](https://www.onlinegdb.com/)
 ### Getting Started
 
 1. 가상환경 생성하기
