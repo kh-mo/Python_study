@@ -31,6 +31,9 @@
     - [리플릿](https://replit.com/)
     - [파이썬 튜터](https://pythontutor.com/)
     - [온라인 GBD](https://www.onlinegdb.com/)
+- 교재
+    - 이것이 취업을 위한 코딩 테스트다 ([깃헙](https://github.com/ndb796/python-for-coding-test) | [정오표](https://www.hanbit.co.kr/store/books/look.php?p_code=B8945183661))
+
 ### Getting Started
 
 1. 가상환경 생성하기
